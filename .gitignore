@@ -1,0 +1,9 @@
+# Mengabaikan file konfigurasi sensitif
+config.php
+
+# Mengabaikan file database mentah (opsional, jika tidak ingin di-push)
+database.sql
+
+# Mengabaikan folder environment / sistem OS
+.DS_Store
+Thumbs.db
