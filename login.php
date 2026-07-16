@@ -1,7 +1,7 @@
 <?php
 require_once 'config.php';
 if (isset($_SESSION['user_id'])) {
-    header('Location: index.php');
+    header('Location: dashboard.php');
     exit;
 }
 ?>
@@ -17,8 +17,10 @@ if (isset($_SESSION['user_id'])) {
 <body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
 
     <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-slate-800 tracking-tight">iNotes 📝</h1>
+       <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-slate-800 tracking-tight">
+                <a href="index.php" class="hover:text-indigo-600 transition-colors">SmartNotes 📝</a>
+            </h1>
             <p class="text-slate-500 text-sm mt-2" id="form-subtitle">Masuk untuk mengelola catatan Anda</p>
         </div>
 

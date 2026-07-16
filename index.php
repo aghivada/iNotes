@@ -1,350 +1,150 @@
 <?php
 require_once 'config.php';
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+if (isset($_SESSION['user_id'])) {
+    header('Location: dashboard.php');
     exit;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Catatan</title>
+    <title>iNotes</title>
     <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen pb-24">
-
-    <!-- NAVBAR -->
-    <nav class="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 py-3">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <span class="text-xl font-bold text-indigo-600">iNotes 📝</span>
-            <div class="flex items-center gap-4">
-                <span class="text-sm text-slate-600 hidden sm:inline">Halo, <?= htmlspecialchars($_SESSION['user_name']) ?></span>
-                <a href="logout.php" class="text-sm font-semibold text-red-500 hover:text-red-700">Keluar</a>
-            </div>
-        </div>
-    </nav>
-
-    <!-- CONTAINER UTAMA -->
-    <main class="max-w-6xl mx-auto px-4 mt-8">
-        <!-- Area Pencarian & Filter Ringan -->
-        <div class="mb-6">
-            <input type="text" id="search-input" placeholder="Cari catatan..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-        </div>
-
-        <!-- GRID CATATAN (Responsive: 1 kolom di HP, bertahap hingga 3 kolom di Desktop) -->
-        <div id="notes-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <!-- Data dimuat dinamis dari JavaScript -->
-        </div>
-    </main>
-
-    <!-- TOMBOL TAMBAH FLOAT (Mobile-Friendly ala Aplikasi Android/iOS) -->
-    <button id="btn-add-note" class="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-lg transition-transform hover:scale-110 active:scale-95 z-40">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-    </button>
-
-    <!-- MODAL FORM (TAMBAH / EDIT CATATAN) -->
-    <div id="note-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl w-full max-w-lg p-6 shadow-xl transform transition-all flex flex-col max-h-[90vh]">
-            <div class="flex justify-between items-center mb-4">
-                <h3 id="modal-title" class="text-lg font-bold text-slate-800">Catatan Baru</h3>
-                <button id="btn-close-modal" class="text-slate-400 hover:text-slate-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-            </div>
-            
-            <form id="note-form" class="space-y-4 flex-1 flex flex-col overflow-y-auto">
-                <input type="hidden" id="note-id">
-                
-                <div>
-                    <input type="text" id="note-title" placeholder="Judul" required class="w-full text-lg font-semibold border-b border-slate-100 focus:border-indigo-500 focus:outline-none py-1">
-                </div>
-                
-                <div class="flex-1 min-h-[150px] flex flex-col">
-                    <textarea id="note-content" placeholder="Tulis catatan Anda di sini..." required class="w-full flex-1 resize-none focus:outline-none py-1 text-slate-700"></textarea>
-                </div>
-
-                <!-- Opsi Tambahan Fitur: Pin & Warna -->
-                <div class="flex flex-wrap gap-4 items-center justify-between border-t border-slate-100 pt-4">
-                    <div class="flex items-center gap-2">
-                        <label class="text-xs font-semibold text-slate-500">Pilih Warna:</label>
-                        <input type="color" id="note-color" value="#ffffff" class="w-8 h-8 rounded-md cursor-pointer border-0">
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input type="checkbox" id="note-pin" class="rounded text-indigo-600 focus:ring-indigo-500">
-                        <label for="note-pin" class="text-sm text-slate-600 font-medium">Sematkan di atas</label>
-                    </div>
-                </div>
-
-                <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
-                    <button type="button" id="btn-delete-note" class="hidden px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-semibold text-sm transition-colors">Hapus</button>
-                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm shadow-md shadow-indigo-100 transition-colors">Simpan</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- KONTAINER TOAST NOTIFIKASI (Melayang di pojok kanan bawah pada desktop, atau di tengah bawah pada HP) -->
-    <div id="toast-container" class="fixed bottom-24 right-6 left-6 sm:left-auto sm:bottom-6 sm:w-80 flex flex-col gap-2 z-50 pointer-events-none"></div>
-
-    <!-- JAVASCRIPT LOGIC INTERAKTIF -->
     <script>
-        let allNotes = [];
-        const notesGrid = document.getElementById('notes-grid');
-        const searchInput = document.getElementById('search-input');
-        const noteModal = document.getElementById('note-modal');
-        const noteForm = document.getElementById('note-form');
+        // AKTIFKAN OPSI DARK MODE BERBASIS CLASS PADA TAILWIND CDN
+        tailwind.config = {
+            darkMode: 'class'
+        }
+
+        // Pengecekan tema awal saat halaman dimuat
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+    <style>
+        /* Pola Grid Geometris yang Dipertajam */
+        .bg-grid-pattern {
+            background-size: 50px 50px;
+            background-image: linear-gradient(to right, rgba(99, 102, 241, 0.15) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(99, 102, 241, 0.15) 1px, transparent 1px);
+            
+            /* Efek Masking: Grid hanya muncul tajam di atas dan memudar total di setengah halaman awal */
+            -webkit-mask-image: linear-gradient(to bottom, white 30%, transparent 80%);
+            mask-image: linear-gradient(to bottom, white 30%, transparent 80%);
+        }
         
-        // Modal Form Inputs
-        const noteIdInput = document.getElementById('note-id');
-        const noteTitleInput = document.getElementById('note-title');
-        const noteContentInput = document.getElementById('note-content');
-        const noteColorInput = document.getElementById('note-color');
-        const notePinInput = document.getElementById('note-pin');
-        
-        // Buttons
-        const btnAddNote = document.getElementById('btn-add-note');
-        const btnCloseModal = document.getElementById('btn-close-modal');
-        const btnDeleteNote = document.getElementById('btn-delete-note');
-        const modalTitle = document.getElementById('modal-title');
-
-        // Mengambil seluruh data catatan saat load awal
-        async function fetchNotes() {
-            try {
-                const res = await fetch('notes_api.php');
-                allNotes = await res.json();
-                renderNotes(allNotes);
-            } catch (err) {
-                console.error("Gagal mengambil data:", err);
-            }
+        .dark .bg-grid-pattern {
+            background-image: linear-gradient(to right, rgba(99, 102, 241, 0.10) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(99, 102, 241, 0.10) 1px, transparent 1px);
         }
+    </style>
+</head>
+<body class="bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 antialiased min-h-screen flex flex-col transition-colors duration-300 relative overflow-x-hidden">
 
-        // Render data catatan ke dalam Grid HTML (Versi Auto-Contrast)
-        function renderNotes(notes) {
-            notesGrid.innerHTML = '';
-            if (notes.length === 0) {
-                notesGrid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400 font-medium">Belum ada catatan. Klik tombol plus di bawah untuk membuat!</div>`;
-                return;
-            }
+    <!-- ORNAMEN 1: BACKGROUND GRID MESH -->
+    <div class="absolute top-0 left-0 right-0 h-[600px] bg-grid-pattern pointer-events-none -z-20"></div>
 
-            notes.forEach(note => {
-                const card = document.createElement('div');
-                card.style.backgroundColor = note.color || '#ffffff';
-                card.className = `p-5 rounded-2xl shadow-sm border border-slate-200/60 cursor-pointer hover:shadow-md transition-all relative group flex flex-col justify-between min-h-[140px]`;
-                
-                // Ambil kelas warna teks yang pas untuk background ini
-                const textColor = getContrastColor(note.color);
+    <!-- ORNAMEN 2: PENDARAN CAHAYA LEMBUT (GLOW EFFECT) -->
+    <div class="absolute top-[-5%] left-[50%] -translate-x-1/2 w-[700px] h-[350px] bg-indigo-500/15 dark:bg-indigo-500/10 rounded-full blur-[130px] pointer-events-none -z-10"></div>
 
-                // Menghindari serangan XSS dengan memfilter text isi catatan
-                const safeTitle = escapeHtml(note.title);
-                const safeContent = escapeHtml(note.content).replace(/\n/g, '<br>');
-
-                card.innerHTML = `
-                    <div>
-                        ${note.is_pinned == 1 ? '<span class="absolute top-3 right-3 text-indigo-600 text-xs font-bold bg-indigo-50 px-2 py-0.5 rounded-full shadow-sm">📌 Disematkan</span>' : ''}
-                        <h4 class="font-bold text-base mb-2 pr-20 line-clamp-1 ${textColor.title}">${safeTitle}</h4>
-                        <p class="text-sm line-clamp-4 leading-relaxed ${textColor.content}">${safeContent}</p>
-                    </div>
-                    <div class="text-[10px] mt-4 text-right ${textColor.date}">
-                        ${new Date(note.updated_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short'})}
-                    </div>
-                `;
-                
-                card.addEventListener('click', () => openModal(note));
-                notesGrid.appendChild(card);
-            });
-        }
-
-        // Buka modal untuk mode tambah atau edit
-        function openModal(note = null) {
-            noteModal.classList.remove('hidden');
-            noteModal.classList.add('flex');
+    <!-- WRAPPER UNTUK KONTEN UTAMA -->
+    <div class="flex-grow">
+        <!-- NAVBAR -->
+        <nav class="max-w-6xl mx-auto px-6 py-6 flex justify-between items-center relative z-10">
+            <div class="flex items-center gap-2">
+                <span class="font-black text-2xl tracking-wider text-indigo-600 dark:text-indigo-400">I</span>
+                <span class="font-bold text-lg tracking-wide text-slate-900 dark:text-white uppercase">INOTE</span>
+            </div>
             
-            if (note) {
-                modalTitle.innerText = "Ubah Catatan";
-                noteIdInput.value = note.id;
-                noteTitleInput.value = note.title;
-                noteContentInput.value = note.content;
-                noteColorInput.value = note.color || '#ffffff';
-                notePinInput.checked = note.is_pinned == 1;
-                btnDeleteNote.classList.remove('hidden');
-            } else {
-                modalTitle.innerText = "Catatan Baru";
-                noteForm.reset();
-                noteIdInput.value = '';
-                noteColorInput.value = '#ffffff';
-                btnDeleteNote.classList.add('hidden');
-            }
-        }
-
-        function closeModal() {
-            noteModal.classList.remove('flex');
-            noteModal.classList.add('hidden');
-        }
-
-        // Kirim Aksi Create/Update ke Backend via Fetch API
-        noteForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const id = noteIdInput.value;
-        const action = id ? 'update' : 'create';
-        
-        const payload = {
-            id: id ? parseInt(id) : null,
-            title: noteTitleInput.value,
-            content: noteContentInput.value,
-            color: noteColorInput.value,
-            is_pinned: notePinInput.checked ? 1 : 0
-        };
-
-        try {
-            const res = await fetch(`notes_api.php?action=${action}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            
-            const result = await res.json();
-            if (result.success) {
-                closeModal();
-                fetchNotes();
-                
-                // --- NOTIFIKASI DI SINI ---
-                if (action === 'create') {
-                    showToast('Catatan berhasil ditambahkan! 🎉', 'success');
-                } else {
-                    showToast('Catatan berhasil diperbarui! 📝', 'info');
-                }
-            } else {
-                showToast('Gagal menyimpan catatan.', 'danger');
-            }
-        } catch (err) {
-            showToast('Terjadi kesalahan koneksi.', 'danger');
-        }
-    });
-
-        // Kirim Aksi Hapus Catatan
-        btnDeleteNote.addEventListener('click', async () => {
-        if (!confirm('Apakah Anda yakin ingin menghapus catatan ini?')) return;
-        
-        try {
-            const res = await fetch('notes_api.php?action=delete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: parseInt(noteIdInput.value) })
-            });
-
-            const result = await res.json();
-            if (result.success) {
-                closeModal();
-                fetchNotes();
-                
-                // --- NOTIFIKASI DI SINI ---
-                showToast('Catatan berhasil dihapus. 🗑️', 'danger');
-            } else {
-                showToast('Gagal menghapus catatan.', 'danger');
-            }
-        } catch (err) {
-            showToast('Terjadi kesalahan koneksi.', 'danger');
-        }
-    });
-
-        // Fungsi untuk menentukan apakah teks harus berwarna gelap atau terang berdasarkan background hex
-            function getContrastColor(hexColor) {
-            // Jika tidak ada warna, default ke gelap (karena background default putih)
-            if (!hexColor) return { title: 'text-slate-800', content: 'text-slate-600', date: 'text-slate-400' };
-            
-            // Hapus karakter '#' jika ada
-            const hex = hexColor.replace('#', '');
-            
-            // Ubah hex ke nilai RGB
-            const r = parseInt(hex.substr(0, 2), 16);
-            const g = parseInt(hex.substr(2, 2), 16);
-            const b = parseInt(hex.substr(4, 2), 16);
-            
-            // Hitung tingkat kecerahan warna menggunakan rumus standar YIQ
-            const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-            
-            // Jika yiq >= 128 berarti warna terang -> gunakan teks gelap
-            // Jika yiq < 128 berarti warna gelap -> gunakan teks terang
-            if (yiq >= 128) {
-                return {
-                    title: 'text-slate-800',
-                    content: 'text-slate-600',
-                    date: 'text-slate-400'
-                };
-            } else {
-                return {
-                    title: 'text-white',
-                    content: 'text-slate-200',
-                    date: 'text-slate-300/80'
-                };
-            }
-        }
-
-        // Fungsi untuk memicu Toast Notification yang interaktif
-function showToast(message, type = 'success') {
-    const container = document.getElementById('toast-container');
-    
-    // Buat elemen toast baru
-    const toast = document.createElement('div');
-    
-    // Tentukan warna berdasarkan tipe notifikasi
-    let bgColor = 'bg-emerald-600'; // Success (hijau)
-    if (type === 'danger') bgColor = 'bg-rose-600'; // Delete/Error (merah)
-    if (type === 'info') bgColor = 'bg-blue-600'; // Edit/Update (biru)
-
-    toast.className = `${bgColor} text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-between gap-3 transform translate-y-4 opacity-0 transition-all duration-300 ease-out pointer-events-auto text-sm font-medium`;
-    
-    // Isi konten toast (pesan + tombol close silang)
-        toast.innerHTML = `
-            <span>${message}</span>
-            <button class="hover:text-white/80 focus:outline-none transition-colors" onclick="this.parentElement.remove()">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+            <button id="theme-toggle" class="p-2 rounded-xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all shadow-sm">
+                <svg id="theme-toggle-light-icon" class="hidden h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.243 17.657l.707.707M6.343 6.343l.707-.707M14 12a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <svg id="theme-toggle-dark-icon" class="hidden h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                 </svg>
             </button>
-        `;
+        </nav>
 
-        // Masukkan ke dalam container
-        container.appendChild(toast);
+        <!-- HERO SECTION -->
+        <header class="max-w-4xl mx-auto text-center px-6 py-28 sm:py-36 relative z-10">        
+            <h1 class="text-4xl sm:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+                Your effective <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-500 dark:from-indigo-400 dark:to-purple-400">Note app</span>
+            </h1>
+            <p class="mt-6 text-base sm:text-lg text-slate-500 dark:text-slate-400 max-w-xl mx-auto leading-relaxed">
+                Manage your notes, tasks, and brilliant ideas effectively with a beautifully minimalist layout designed for speed and simplicity.
+            </p>
+            <div class="mt-10">
+                <a href="login.php" class="inline-block bg-slate-900 hover:bg-black dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white font-semibold px-8 py-3.5 rounded-xl shadow-md transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+                    Coba Sekarang
+                </a>
+            </div>
+        </header>
 
-        // Trigger animasi muncul (sedikit jeda agar transisi CSS berjalan)
-        setTimeout(() => {
-            toast.classList.remove('translate-y-4', 'opacity-0');
-        }, 10);
+        <!-- SEKTOR FITUR -->
+        <section class="max-w-5xl mx-auto px-6 py-24 border-t border-slate-100 dark:border-slate-900 relative z-20">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                
+                <!-- Fitur 1 -->
+                <div class="p-8 rounded-2xl bg-slate-50/50 dark:bg-slate-900/20 border border-slate-200/60 dark:border-slate-900/80 shadow-sm hover:border-indigo-500/40 dark:hover:border-indigo-400/40 transition-all duration-300">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-lg mb-5 shadow-sm border border-indigo-100 dark:border-none">✨</div>
+                    <h3 class="font-bold text-lg text-slate-900 dark:text-white mb-2">Minimalist UI</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">Fokus penuh pada tulisan Anda tanpa gangguan visual yang tidak penting.</p>
+                </div>
 
-        // Hapus otomatis setelah 3.5 detik dengan efek animasi keluar
-        setTimeout(() => {
-            toast.classList.add('translate-y-2', 'opacity-0');
-            setTimeout(() => {
-                toast.remove();
-            }, 300); // Tunggu animasi transisi keluar selesai sebelum dihapus dari DOM
-        }, 3500);
-    }
+                <!-- Fitur 2 -->
+                <div class="p-8 rounded-2xl bg-slate-50/50 dark:bg-slate-900/20 border border-slate-200/60 dark:border-slate-900/80 shadow-sm hover:border-indigo-500/40 dark:hover:border-indigo-400/40 transition-all duration-300">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-lg mb-5 shadow-sm border border-indigo-100 dark:border-none">🎨</div>
+                    <h3 class="font-bold text-lg text-slate-900 dark:text-white mb-2">Smart Contrast</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">Warna teks otomatis menyesuaikan tingkat kecerahan latar belakang yang Anda pilih.</p>
+                </div>
 
-        // Logika Pencarian Catatan Instan (Client-Side Filter)
-        searchInput.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
-            const filtered = allNotes.filter(n => 
-                n.title.toLowerCase().includes(query) || 
-                n.content.toLowerCase().includes(query)
-            );
-            renderNotes(filtered);
-        });
+                <!-- Fitur 3 -->
+                <div class="p-8 rounded-2xl bg-slate-50/50 dark:bg-slate-900/20 border border-slate-200/60 dark:border-slate-900/80 shadow-sm hover:border-indigo-500/40 dark:hover:border-indigo-400/40 transition-all duration-300">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-lg mb-5 shadow-sm border border-indigo-100 dark:border-none">🔒</div>
+                    <h3 class="font-bold text-lg text-slate-900 dark:text-white mb-2">Google Auth</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">Masuk secara instan dan aman dengan satu klik menggunakan akun Google Anda.</p>
+                </div>
 
-        // Helper anti XSS injection
-        function escapeHtml(text) {
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+            </div>
+        </section>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="text-center py-10 text-xs text-slate-400 dark:text-slate-600 relative z-10 border-t border-slate-50 dark:border-slate-900/40 w-full">
+        &copy; 2024 iNotes App. Made With 🦾
+    </footer>
+
+    <script>
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+
+        function updateIcons() {
+            if (document.documentElement.classList.contains('dark')) {
+                themeToggleLightIcon.classList.remove('hidden');
+                themeToggleDarkIcon.classList.add('hidden');
+            } else {
+                themeToggleLightIcon.classList.add('hidden');
+                themeToggleDarkIcon.classList.remove('hidden');
+            }
         }
 
-        btnAddNote.addEventListener('click', () => openModal());
-        btnCloseModal.addEventListener('click', closeModal);
-        window.addEventListener('click', (e) => { if (e.target === noteModal) closeModal(); });
+        updateIcons();
 
-        // Load data awal ketika halaman dibuka
-        fetchNotes();
+        themeToggleBtn.addEventListener('click', function() {
+            document.documentElement.classList.toggle('dark');
+            if (document.documentElement.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+            } else {
+                localStorage.setItem('theme', 'light');
+            }
+            updateIcons();
+        });
     </script>
 </body>
 </html>
