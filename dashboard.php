@@ -22,7 +22,11 @@ if (!isset($_SESSION['user_id'])) {
             <span class="text-xl font-bold text-indigo-600">iNotes 📝</span>
             <div class="flex items-center gap-4">
                 <span class="text-sm text-slate-600 hidden sm:inline">Halo, <?= htmlspecialchars($_SESSION['user_name']) ?></span>
-                <a href="logout.php" class="text-sm font-semibold text-red-500 hover:text-red-700">Keluar</a>
+               <a href="logout.php" class="p-2 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 dark:text-slate-400 dark:hover:text-red-400 dark:hover:bg-red-950/30 transition-all duration-200" title="Keluar">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+                </svg>
+                </a>
             </div>
         </div>
     </nav>
@@ -136,6 +140,9 @@ if (!isset($_SESSION['user_id'])) {
                 
                 // Ambil kelas warna teks yang pas untuk background ini
                 const textColor = getContrastColor(note.color);
+
+                //efek melayang, bayangan lembut, dan transisi animasi mikro saat di-hover
+                card.className = `p-5 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800/40 cursor-pointer relative group flex flex-col justify-between min-h-[140px] transition-all duration-300 ease-in-out hover:-translate-y-1.5 hover:shadow-xl hover:border-indigo-500/20`;
 
                 // Menghindari serangan XSS dengan memfilter text isi catatan
                 const safeTitle = escapeHtml(note.title);
@@ -283,8 +290,8 @@ if (!isset($_SESSION['user_id'])) {
             }
         }
 
-        // Fungsi untuk memicu Toast Notification yang interaktif
-function showToast(message, type = 'success') {
+    // Fungsi untuk memicu Toast Notification yang interaktif
+    function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     
     // Buat elemen toast baru
